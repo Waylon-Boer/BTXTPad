@@ -1,4 +1,4 @@
-% BTXTPad - A text editor
+# BTXTPad - A text editor
 *Copyright (C) 2021 and later: Waylon Boer*
 
 BTXTPad is a free and simple text editor.
