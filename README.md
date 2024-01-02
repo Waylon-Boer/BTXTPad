@@ -1,5 +1,5 @@
-# BTXTPad - A text editor
-## *Copyright (C) 2021 and later: Waylon Boer*
+% BTXTPad - A text editor
+*Copyright (C) 2021 and later: Waylon Boer*
 
 BTXTPad is a free and simple text editor.
 BXTPad also has some additional features, such as sticky notes and a calculator.
