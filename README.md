@@ -9,3 +9,4 @@ Some features do not work on Linux.
 You can also run BTXTPad in the Windows recovery environment.
 
 Thanks for using BTXTPad!
+a
