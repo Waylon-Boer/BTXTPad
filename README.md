@@ -1,11 +1,9 @@
 # BTXTPad - A text editor
 *Copyright (C) 2022 and later: Waylon Boer*
 
-BTXTPad is a free and simple text editor.
-BTXTPad also has some additional features, such as a sidebar and a calculator.
+BTXTPad is a simple text editor.
+BTXTPad has some additional features, for example a sidebar.
 The default file format is .btxt, but BTXTPad can also edit other plain text files.
-BTXTPad was developed for use on Windows, but the source code also works on Linux.
-Some features do not work on Linux.
-You can also run BTXTPad in the Windows recovery environment.
+There is also a standalone notetaking app availible: BTXTPad Note.
 
 Thanks for using BTXTPad!
