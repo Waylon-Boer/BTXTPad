@@ -4,6 +4,6 @@
 BTXTPad is a simple text editor.
 BTXTPad has some additional features, for example a sidebar.
 The default file format is .btxt, but BTXTPad can also edit other plain text files.
-There is also a standalone notetaking app availible: BTXTPad Note.
+There is also a standalone notetaking app available: BTXTPad Note.
 
 Thanks for using BTXTPad!
