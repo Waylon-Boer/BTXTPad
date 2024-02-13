@@ -49,12 +49,12 @@ class main():
             editor.configure(state="normal")
         main.status_bar.refresh()
     def about():
-        messagebox.showinfo("About BTXTPad", """BTXTPad - a text editor
+        messagebox.showinfo("About BTXTPad", """BTXTPad - A text editor
 Copyright (C) 2022-""" + str(datetime.datetime.now().year) +""": Waylon Boer
 
 BTXTPad is a simple text editor. BTXTPad has some additional features, for example a sidebar. The default file format is .btxt, but BTXTPad can also edit other plain text files. There is also a standalone notetaking app available: BTXTPad Note.
 
-Thanks for using BTXTPad!""")
+Thank you for using BTXTPad!""")
     def license():
         messagebox.showinfo("MIT License", """Copyright (c) 2022 Waylon Boer
 
