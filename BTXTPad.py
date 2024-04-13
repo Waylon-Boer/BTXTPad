@@ -1,517 +1,533 @@
 from tkinter import *
 from tkinter.ttk import *
 from tkinter import messagebox, font, filedialog, scrolledtext
-from tkinter import Label as tk_Label
-import os, datetime, calendar, math
+import os, shutil, datetime, calendar, math
 class main():
-    def file(i):
-        global filepath, statusbar
-        if i == "n":
-            filepath = "New BTXTPad Document.btxt"
+    def new():
+        global filepath
+        if editor.get(1.0, END) != "\n":
+            choice = messagebox.askyesnocancel("BTXTPad","Do you want to save the changes made to this file?")
+            if choice == True:
+                main.save()
+            elif choice == False:
+                editor.delete(1.0, END)
+                filepath = ""
+                root.title("BTXTPad")
+        else: 
             editor.delete(1.0, END)
-        elif i == "o":
-            filepath = filedialog.askopenfilename(filetypes=[("BTXTPad Documents", "*.btxt*"), ('Plain Text Files', "*.txt*"), ("Comma Separated Values", "*.csv*"), ("HyperText Markup Language", "*.html*"), ("All Files", "*.*")])
+            filepath = ""
+            root.title("BTXTPad")
+    def open():
+        global filepath
+        filepath = filedialog.askopenfilename(filetypes=[("BTXTPad Documents", "*.btxt*"), ('Plain Text Files', "*.txt*"), ("Comma Separated Values", "*.csv*"), ("HyperText Markup Language", "*.html*"), ("All Files", "*.*")])
+        if filepath == "":
+            editor.insert(INSERT, "")
+        else:
             editor.delete(1.0, END)
             if filepath.split(".")[len(filepath.split(".")) - 1] == "csv":
-                editor.insert(INSERT, open(filepath, 'r', encoding='utf8').read().replace(";", "\t"))
+                choice = messagebox.askokcancel("BTXTPad","Do you want to convert this file to plain text?")
+                if choice == True:
+                    editor.insert(INSERT, open(filepath, "r", encoding="utf8").read().replace(";", "\t"))
+                else:
+                    editor.insert(INSERT, open(filepath, "r", encoding="utf8").read())
             else:
-                editor.insert(INSERT, open(filepath, 'r', encoding='utf8').read())
-        elif i == "s":
-            if filepath == "New BTXTPad Document.btxt":
-                main.file("e")
-            else:
-                open(filepath, 'w', encoding='utf8').write(editor.get(1.0, END))
-        else:
-            path = filedialog.asksaveasfilename(defaultextension=".btxt", filetypes=[('All Files', '*.*')])
-            try:
-                open(path, 'w', encoding='utf8').write(editor.get(1.0, END))
-                filepath = path
-            except:
-                filepath = "New BTXTPad Document.btxt"
-        root.title(filepath.split("/")[len(filepath.split("/")) - 1]+" - BTXTPad")
-    def delete():
+                editor.insert(INSERT, open(filepath, "r", encoding="utf8").read())
+            root.title(filepath.split("/")[len(filepath.split("/")) - 1]+" - BTXTPad")
+    def save():
         global filepath
-        ch = messagebox.askyesno("BTXTPad","Do you want to delete this file permanently?")
-        if ch:
-            ch = messagebox.askyesno("BTXTPad","Do you want to delete this file permanently? (double check)")
-            if ch:
-                os.remove(filepath)
-                editor.delete(1.0, END)
-                filepath = "New BTXTPad Document.btxt"
-                root.title("BTXTPad")
-    def read_mode():
-        global editable
-        if editable == 1:
-            editable = 0
-            editor.configure(state="disabled")
+        if filepath == "":
+            main.save_as()
         else:
-            editable = 1
-            editor.configure(state="normal")
-        main.status_bar.refresh()
-    def about():
-        messagebox.showinfo("About BTXTPad", """BTXTPad - A text editor
-Copyright (C) 2022-""" + str(datetime.datetime.now().year) +""": Waylon Boer
-
-BTXTPad is a simple text editor. BTXTPad has some additional features, for example a sidebar. The default file format is .btxt, but BTXTPad can also edit other plain text files. There is also a standalone notetaking app available: BTXTPad Note.
-
-Thank you for using BTXTPad!""")
-    def license():
-        messagebox.showinfo("MIT License", """Copyright (c) 2022 Waylon Boer
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR a PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.""")
+            open(filepath, "w", encoding='utf8').write(editor.get(1.0, END))
+        root.title(filepath.split("/")[len(filepath.split("/")) - 1]+" - BTXTPad")
+    def save_as():
+        global filepath
+        path = filepath
+        try:
+            filepath = filedialog.asksaveasfilename(defaultextension=".btxt", filetypes=[("All Files", "*.*")])
+            open(filepath, "w", encoding='utf8').write(editor.get(1.0, END))
+            root.title(filepath.split("/")[len(filepath.split("/")) - 1]+" - BTXTPad")
+        except FileNotFoundError:
+            filepath = path
+    def duplicate():
+        filepath = filedialog.askopenfilename(title="Copy", filetypes=[("All Files", "*.*"), ("BTXTPad Documents", "*.btxt*"), ('Plain Text Files', "*.txt*"), ("Comma Separated Values", "*.csv*"), ("HyperText Markup Language", "*.html*")])
+        shutil.copy(filepath, filedialog.askdirectory(title="Copy to")+"/"+filepath.split("/")[len(filepath.split("/")) - 1])
+    def read_mode():
+        editor.configure(state="disabled")
+        menuFile.delete(8, 11)
+        menuFile.add_command(label="Edit Mode", command=main.edit_mode, accelerator="Ctrl+E")
+        menuFile.add_separator()
+        menuFile.add_command(label="Exit", command=main.exit, accelerator="Alt+F4")
+        root.bind("<Control-e>", lambda i: main.edit_mode())
+        root.bind("<Control-E>", lambda i: main.edit_mode())
+        root.bind("<F7>", lambda i: main.edit_mode())
+    def edit_mode():
+        editor.configure(state="normal")
+        menuFile.delete(8, 11)
+        menuFile.add_command(label="Read Mode", command=main.read_mode, accelerator="Ctrl+E")
+        menuFile.add_separator()
+        menuFile.add_command(label="Exit", command=main.exit, accelerator="Alt+F4")
+        root.bind("<Control-e>", lambda i: main.read_mode())
+        root.bind("<Control-E>", lambda i: main.read_mode())
+        root.bind("<F7>", lambda i: main.read_mode())
     def cut():
         editor.clipboard_clear()
-        editor.delete("sel.first", "sel.last")
-        editor.clipboard_append(editor.get("sel.first", "sel.last"))
+        editor.delete(SEL_FIRST, SEL_LAST)
+        editor.clipboard_append(editor.get(SEL_FIRST, SEL_LAST))
     def copy(self):
         self.clipboard_clear()
-        self.clipboard_append(self.get("sel.first", "sel.last"))
+        self.clipboard_append(self.get(SEL_FIRST, SEL_LAST))
     def keep():
-        editor.delete(1.0, "sel.first")
-        editor.delete("sel.last", END)
-    def find_next(find, ln, col):
+        editor.delete(1.0, SEL_FIRST)
+        editor.delete(SEL_LAST, END)
+    def find_next(find):
         lc = editor.search(find, editor.index(INSERT))
-        editor.mark_set(INSERT, float(str(lc).split(".")[0]+"."+str(int(str(lc).split(".")[1])+len(find))))
         editor.tag_remove(SEL, 1.0, END)
-        editor.tag_add(SEL, lc, float(str(lc).split(".")[0]+"."+str(int(str(lc).split(".")[1])+len(find))))
-        try:
-            main.refresh_lc(ln, col)
-        except:
-            editor.focus_set()
-        main.status_bar.refresh()
-    def replace_next(find, replace, ln, col):
-        lc = editor.search(find, editor.index(INSERT))
-        editor.mark_set(INSERT, float(str(lc).split(".")[0]+"."+str(int(str(lc).split(".")[1])+len(find))))
-        editor.delete(lc, float(str(lc).split(".")[0]+"."+str(int(str(lc).split(".")[1])+len(find))))
+        editor.tag_add(SEL, lc, "{}.{}".format(*lc.split(".")[:-1], int(lc.split(".")[-1])+len(find)))
+        editor.mark_set(INSERT, "{}.{}".format(*lc.split(".")[:-1], int(lc.split(".")[-1])+len(find)))
+        editor.focus_set()
+    def replace_next(find, replace):
+        main.find_next(find)
+        text = editor.get(SEL_FIRST, SEL_LAST)
+        editor.delete(SEL_FIRST, SEL_LAST)
         editor.insert(INSERT, replace)
-        main.refresh_lc(ln, col)
-    def replace_all(find, replace, ln, col):
+    def replace_all(find, replace):
         text = editor.get(1.0, END).replace(find, replace)
         editor.delete(1.0, END)
         editor.insert(INSERT, text)
-        main.refresh_lc(ln, col)
+        editor.delete("end-1c linestart", END)
     def refresh_lc(ln, col):
-        main.status_bar.refresh()
         ln.delete(0, END)
         ln.insert(INSERT, str(editor.index(INSERT)).split(".")[0])
         col.delete(0, END)
         col.insert(INSERT, str(editor.index(INSERT)).split(".")[1])
-    def replace():
-        app = Tk()
-        app.title("Replace")
-        app.rowconfigure(0, weight=1)
-        app.columnconfigure(0, weight=1)
-        app.geometry("400x132")
-        app.resizable(width=False, height=False)
-        try:
-            app.iconbitmap("btxtpad.ico")
-        finally:
-            f = Frame(app, border=16)
-            f.grid(row=0, column=0, sticky="nsew")
-            f.columnconfigure(1, weight=1)
-            Label(f, text="Find", width=12).grid(row=0, column=0, sticky="w")
-            find = Entry(f)
-            find.grid(row=0, column=1, sticky="nsew")
-            Button(f, text="Find", command=lambda: main.find_next(find.get(), ln, col)).grid(row=0, column=2, sticky="nsew")
-            Label(f, text="Replace", width=12).grid(row=1, column=0, sticky="w")
-            replace = Entry(f)
-            replace.grid(row=1, column=1, sticky="nsew")
-            Button(f, text="Replace", command=lambda: main.replace_next(find.get(), replace.get(), ln, col)).grid(row=1, column=2, sticky="nsew")
-            Label(f, text="Line", width=12).grid(row=2, column=0, sticky="nsew")
-            ln = Entry(f)
-            ln.grid(row=2, column=1, sticky="nsew")
-            ln.insert(INSERT, str(editor.index(INSERT)).split(".")[0])
-            Button(f, text="Replace All", command=lambda: main.replace_all(find.get(), replace.get(), ln, col)).grid(row=2, column=2, sticky="nsew")
-            Label(f, text="Colunn", width=12).grid(row=3, column=0, sticky="nsew")
-            col = Entry(f)
-            col.grid(row=3, column=1, sticky="nsew")
-            col.insert(INSERT, str(editor.index(INSERT)).split(".")[1])
-            Button(f, text="Go To", command=lambda: editor.mark_set(INSERT, float(str(int(ln.get()))+"."+str(int(col.get()))))).grid(row=3, column=2, sticky="nsew")
-            app.mainloop()  
     def go_to():
-        app = Tk()
-        app.title("Go To")
-        app.rowconfigure(0, weight=1)
-        app.columnconfigure(0, weight=1)
-        app.geometry("400x80")
-        app.resizable(width=False, height=False)
+        editor.mark_set(INSERT, float(str(int(ln.get()))+"."+str(int(col.get()))))
+        editor.focus_set()
+    def change_font(var_font_family, var_size, var_style):
+        editor.configure(font=(var_font_family, var_size, var_style))
+        frameFont.grid_forget()
+        frameSearch.grid(row=0, column=4, sticky=NSEW)
+    def font():
+        frameSearch.grid_forget()
+        frameFont.grid(row=0, column=4, sticky=NSEW)
+    def capitalize(a, b):
+        chars = {"a": "ᴀ", "b": "ʙ", "c": "ᴄ", "d": "ᴅ", "e": "ᴇ", "f": "ғ", "g": "ɢ", "h": "ʜ", "i": "ɪ", "j": "ᴊ", "k": "ᴋ", "l": "ʟ", "m": "ᴍ", "n": "ɴ", "o": "ᴏ", "p": "ᴘ", "q": "ǫ", "r": "ʀ", "s": "s", "t": "ᴛ", "u": "ᴜ", "v": "ᴠ", "w": "ᴡ", "x": "x", "y": "ʏ", "z": "ᴢ"}
+        text = editor.get(SEL_FIRST, SEL_LAST)    
+        for i in chars:
+            text = text.replace(eval(a), eval(b))
+        editor.delete(SEL_FIRST, SEL_LAST)
+        editor.insert(INSERT, text)
+    def list():
         try:
-            app.iconbitmap("btxtpad.ico")
-        finally:
-            f = Frame(app, border=16)
-            f.grid(row=0, column=0, sticky="nsew")
-            f.columnconfigure(1, weight=1)
-            Label(f, text="Line", width=12).grid(row=0, column=0, sticky="nsew")
-            ln = Entry(f)
-            ln.grid(row=0, column=1, sticky="nsew")
-            ln.insert(INSERT, str(editor.index(INSERT)).split(".")[0])
-            Button(f, text="Refresh", command=lambda: main.refresh_lc(ln, col)).grid(row=0, column=2, sticky="nsew")
-            Label(f, text="Colunn", width=12).grid(row=1, column=0, sticky="nsew")
-            col = Entry(f)
-            col.grid(row=1, column=1, sticky="nsew")
-            col.insert(INSERT, str(editor.index(INSERT)).split(".")[1])
-            Button(f, text="Go To", command=lambda: editor.mark_set(INSERT, float(str(int(ln.get()))+"."+str(int(col.get()))))).grid(row=1, column=2, sticky="nsew")
-            app.mainloop()  
-    def underline():
-        global u
-        if u == 0:
-            root.bind("<Right>", lambda i: editor.insert(INSERT, "̲"))
-            u = 1
-        else:
-            root.bind("<Right>", lambda i: editor.insert(INSERT, ""))
-            u = 0
-    def full_screen():
-        global fs
-        if fs == 1:
-            fs = 0
-        else:
-            fs = 1
-        root.attributes("-fullscreen", fs)
+            text = editor.get(SEL_FIRST, SEL_LAST)
+            editor.delete(SEL_FIRST, SEL_LAST)
+            if "• " in text:
+                editor.insert(INSERT, text.replace("• ", ""))
+            else:    
+                editor.insert(INSERT, "• " + text.replace("\n", "\n• "))
+        except:
+            editor.insert(INSERT, "\n• ")
+    def line(chars):
+        try:
+            text = editor.get(SEL_FIRST, SEL_LAST)
+            editor.delete(SEL_FIRST, SEL_LAST)
+            if chars in text:
+                editor.insert(INSERT, text.replace(chars, ""))
+            else:    
+                for i in text:
+                    if chars == "̶":
+                        editor.insert(INSERT, chars + i)
+                    else:
+                        if i == " " or i == "\n" or i == "\t" or i == "\r":
+                            editor.insert(INSERT, i)
+                        else:
+                            editor.insert(INSERT, i + chars)
+        except:
+            editor.insert(INSERT, chars)
     def sidebar(i):
         if i == "h":
-            frameEditor.grid(row=0, column=0, sticky="nsew")
+            menu_bar_editor.grid(row=0, column=0, sticky=NSEW)
+            editor.grid(row=1, column=0, sticky=NSEW)
             root.columnconfigure(0, weight=1)
-            root.columnconfigure(1, weight=0)
-            sidebar.grid_forget()        
+            root.columnconfigure(1, weight=0, minsize=0)
+            menu_bar_sidebar.grid_forget()
+            sidebar.grid_forget()
+            editor.focus_set()
+            root.unbind("<Double-Button-1>")
         elif i == "l":
-            sidebar.grid(row=0, column=0, sticky="nsew")
-            frameEditor.grid(row=0, column=1, sticky="nsew")
-            root.columnconfigure(0, weight=0)
+            menu_bar_sidebar.grid(row=0, column=0, sticky=NSEW)
+            sidebar.grid(row=1, column=0, sticky=NSEW)
+            menu_bar_editor.grid(row=0, column=1, sticky=NSEW)
+            editor.grid(row=1, column=1, sticky=NSEW)
+            root.columnconfigure(0, weight=0, minsize=320)
             root.columnconfigure(1, weight=1)
-        else:
-            frameEditor.grid(row=0, column=0, sticky="nsew")
-            sidebar.grid(row=0, column=1, sticky="nsew")
+            root.unbind("<Double-Button-1>")
+        elif i == "r":
+            menu_bar_editor.grid(row=0, column=0, sticky=NSEW)
+            editor.grid(row=1, column=0, sticky=NSEW)
+            menu_bar_sidebar.grid(row=0, column=1, sticky=NSEW)
+            sidebar.grid(row=1, column=1, sticky=NSEW)
             root.columnconfigure(0, weight=1)
-            root.columnconfigure(1, weight=0)
+            root.columnconfigure(1, weight=0, minsize=320)
+            root.unbind("<Double-Button-1>")
+        else:
+            menu_bar_editor.grid_forget()
+            editor.grid_forget()
+            menu_bar_sidebar.grid(row=0, column=0, sticky=NSEW)
+            sidebar.grid(row=1, column=0, sticky=NSEW)
+            root.columnconfigure(0, weight=1)
+            root.columnconfigure(1, weight=0, minsize=0)
+            root.bind("<Double-Button-1>", lambda i: main.sidebar("h"))
     def note():
-        calc.grid_forget()
-        note.grid(row=1, column=0, sticky="nsew")
-        buttonOptions.grid(row=0, column=1, sticky="nsew")
+        for i in [calc, help_tabs, frameReplace]:
+            i.grid_forget()
+        note.grid(row=0, column=0, sticky=NSEW)
         buttonWidgets.configure(text="Note")
-    def calculator():
-        note.grid_forget()
-        buttonOptions.grid_forget()
-        calc.grid(row=1, column=0, sticky="nsew")
-        buttonWidgets.configure(text="Calculator")
-    def calculate(type):
-        eq = bar.get()
-        if type == "bin":
-            eq = str(bin(int(eval(eq))))
-        elif type == "oct":
-            eq = str(oct(int(eval(eq))))
-        elif type == "hex":
-            eq = str(hex(int(eval(eq))))
-        elif type == "inv":
-            eq = str(1/float(eval(eq)))
-        elif type == "sq":
-            eq = str(eval(eq) * eval(eq))
-        elif type == "sq3":
-            eq = str(eval(eq) * eval(eq) * eval(eq))
-        elif type == "sqrt":
-            eq = str(math.sqrt(eval(eq)))
-        else:
-            eq = eval(eq)
+        note.focus_set()
+    def calculate(option):
         bar.delete(0, END)
-        bar.insert(INSERT, eq)
-    def change_font(self, font_family, size, style):
-        editor.configure(font=(font_family, size, style))
-        self.destroy()
-    def font():
-        app = Tk()
-        app.title("Font")
-        app.rowconfigure(0, weight=1)
-        app.columnconfigure(0, weight=1)
-        app.geometry("275x125")
-        app.resizable(height=False, width=False)
-        try:
-            app.iconbitmap("btxtpad.ico")
-        finally:
-            f = Frame(app, border=16)
-            f.grid(row=0, column=0, sticky="nsew")
-            f.rowconfigure(3, weight=1)
-            f.columnconfigure(1, weight=1)
-            Label(f, text="Font Family", width=12).grid(row=0, column=0, sticky="w")
-            font_family = Combobox(f, values=font.families())
-            font_family.grid(row=0, column=1, sticky="nsew")
-            Label(f, text="Size", width=12).grid(row=1, column=0, sticky="w")
-            size = Combobox(f, values=("8", "9", "10", "11", "12", "14", "16", "18", "20", "22", "24", "26", "28", "36", "48", "72"))
-            size.grid(row=1, column=1, sticky="nsew")
-            Label(f, text="Style", width=12).grid(row=2, column=0, sticky="w")
-            style = Combobox(f, values=("normal", "bold", "italic", "bold italic", "underline", "bold underline", "italic underline", "bold italic underline"))
-            style.grid(row=2, column=1, sticky="nsew")
-            Label(f, text="Save", width=12).grid(row=3, column=0, sticky="w")
-            action_button = Button(f, text="OK", command=lambda: main.change_font(app, font_family.get(), int(size.get()), style.get()))
-            action_button.grid(row=3, column=1, sticky="nsew")
-            app.bind("<Return>", lambda i: main.change_font(app, font_family.get(), int(size.get()), style.get()))
-            app.mainloop()
-    def align(i):
-        editor.tag_add("alignment", 1.0, END)
-        editor.tag_configure("alignment", justify=i)
-    def theme(bg1, fg1, bg2, fg2):
-        editor.configure(bg=bg1, fg=fg1)
-        status_bar.configure(bg=bg2, fg=fg2)
-    def switch_theme():
-        global theme
-        if theme == 0:
-            main.theme("#dcb", "#000", "#654", "#fff")
-            theme = 1
-        elif theme == 1:
-            main.theme("#333", "#fff", "#345", "#fff")
-            theme = 2
-        elif theme == 2:
-            main.theme("#000", "#fff", "#000", "#0f0")
-            theme = 3
+        bar.insert(INSERT, option)
+    def calculator():
+        buttonWidgets.configure(text="Calculator")
+        for i in [note, help_tabs, frameReplace]:
+            i.grid_forget()
+        calc.grid(row=0, column=0, sticky=NSEW)
+        bar.focus_set()
+    def help():
+        buttonWidgets.configure(text="Help")
+        for i in [note, calc, frameReplace]:
+            i.grid_forget()
+        help_tabs.grid(row=0, column=0, sticky=NSEW)
+    def replace():
+        buttonWidgets.configure(text="Replace")
+        for i in [note, calc, help_tabs]:
+            i.grid_forget()
+        frameReplace.grid(row=0, column=0, sticky=NSEW)
+        find.focus_set()
+    def theme(bg0, bg1, bg2, fg, abg, afg):
+        editor.configure(bg=bg0, fg=fg, insertbackground=fg)
+        editor.tag_configure(SEL, background=bg2, foreground=fg)
+        for i in ["TButton", "TCombobox", "TEntry", "TFrame", "TLabel", "TNotebook", "TScrollbar"]:
+            a.configure(i, background=bg1)
+        for i in [menuFile, menuEdit, menuDelete, menuFormat, menuInsert, menuView, menuSidebar, menuWrap, menuWidgets, menuOptions]:
+            i.configure(background=bg1, foreground=afg, activebackground=abg, activeforeground=afg)
+            a.configure("TLabel", foreground=afg)
+    def full_screen():
+        global fs
+        if fs == 0:
+            root.attributes("-fullscreen", True)
+            fs = 1
         else:
-            main.theme("#fff", "#000", "#f0f0f0", "#000")
-            theme = 0
+            root.attributes("-fullscreen", False)
     def exit():
-        ch = messagebox.askyesno("BTXTPad","Do you want to exit BTXTPad?")
-        if ch:
+        if editor.get(1.0, END) != "\n":
+            choice = messagebox.askyesnocancel("BTXTPad","Do you want to save the changes made to this file?")
+            if choice == True:
+                main.save()
+                root.destroy()
+            elif choice == False:
+                root.destroy()
+        else: 
              root.destroy()
-    def b3_edit(self):
-        menuEdit.tk_popup(self.x_root, self.y_root)
-    def b3_note(self):
-        menuOptions.tk_popup(self.x_root, self.y_root)
-    class status_bar():
-        def refresh():
-            if editable == 0:
-                mode = "Read Mode"
-            else:
-                mode = "Edit Mode"
-            l = editor.index(INSERT).split(".")[0]
-            c = editor.index(INSERT).split(".")[1]
-            lines = str(len(editor.get(1.0, END).split("\n"))-1)
-            characters = str(len(editor.get(1.0, END)) - 1)
-            try:
-                if len(editor.selection_get(selection="CLIPBOARD")) > 50:
-                    clipboard = editor.selection_get(selection="CLIPBOARD").replace("\n", " ")[:50] + "..."
-                else:
-                    clipboard = editor.selection_get(selection="CLIPBOARD").replace("\n", " ")
-            except:
-                clipboard = "Empty"
-            status_bar.configure(text=mode+" | Line " + l + "/" + lines + "; Column: " + c + " | Characters: " + characters +" | Clipboard: " + clipboard)
-        def toggle():
-            global statusbar
-            if statusbar == 0:
-                status_bar.grid(row=2, column=0, sticky="nsew")
-                statusbar = 1
-            else:
-                status_bar.grid_forget()
-                statusbar = 0
-            main.status_bar.refresh()
+    def b3_edit(event):
+        menuEdit.tk_popup(event.x_root, event.y_root)
+    def b3_options(event):
+        menuOptions.tk_popup(event.x_root, event.y_root)
 if __name__ == "__main__":
     root = Tk()
-    filepath, fs, editable, u, statusbar, theme = "New BTXTPad Document.btxt", 0, 1, 0, 0, 0
+    filepath, fs = "", 0
     root.title("BTXTPad")
     root.geometry("800x600")
+    a = Style(root)
     try:
         root.iconbitmap("btxtpad.ico")
-    finally:
-        root.rowconfigure(0, weight=1)
-        root.columnconfigure(0, weight=1)
-        root.protocol('WM_DELETE_WINDOW', main.exit)
-        frameEditor = Frame(root)
-        frameEditor.grid(row=0, column=0, sticky="nsew")
-        frameEditor.rowconfigure(1, weight=1)
-        frameEditor.columnconfigure(0, weight=1)
-        menu_bar_editor = Frame(frameEditor, border=5)
-        menu_bar_editor.grid(row=0, column=0, sticky="nsew")
-        menu_bar_editor.columnconfigure(4, weight=1)
-        buttonFile = Menubutton(menu_bar_editor, text="File")
-        buttonFile.grid(row=0, column=0, sticky="nsew")
-        buttonEdit = Menubutton(menu_bar_editor, text="Edit")
-        buttonEdit.grid(row=0, column=1, sticky="nsew")
-        buttonInsert = Menubutton(menu_bar_editor, text="Insert")
-        buttonInsert.grid(row=0, column=2, sticky="nsew")
-        buttonView = Menubutton(menu_bar_editor, text="View")
-        buttonView.grid(row=0, column=3, sticky="nsew")
-        query = Entry(menu_bar_editor)
-        query.grid(row=0, column=4, sticky="nsew")
-        Button(menu_bar_editor, text="Search", command=lambda: main.find_next(query.get(), 0, 0)).grid(row=0, column=5, sticky="nsew")
-        menuFile = Menu(buttonFile, tearoff=False)
-        buttonFile.configure(menu=menuFile)
-        menuFile.add_command(label="New", command=lambda: main.file("n"), accelerator="Ctrl+N")
-        menuFile.add_command(label="Open", command=lambda: main.file("o"), accelerator="Ctrl+O")
-        menuFile.add_command(label="Save", command=lambda: main.file("s"), accelerator="Ctrl+S")
-        menuFile.add_command(label="Save As", command=lambda: main.file("e"), accelerator="Ctrl+Shift+S")
-        menuFile.add_separator()
-        menuFile.add_command(label="Print", command=lambda: os.startfile(filepath, "print"), accelerator="Ctrl+P")
-        menuFile.add_command(label="Delete", command=main.delete, accelerator="Ctrl+Q")
-        menuFile.add_separator()
-        menuFile.add_command(label="Read Mode", command=main.read_mode, accelerator="F7")
-        menuFile.add_separator()
-        menuFile.add_command(label="About", command=main.about, accelerator="F1")
-        menuFile.add_command(label="License", command=main.license, accelerator="F2")
-        menuFile.add_separator()
-        menuFile.add_command(label="Exit", command=root.destroy, accelerator="Alt+F4")
-        menuEdit = Menu(buttonEdit, tearoff=False)
-        buttonEdit.configure(menu=menuEdit)
-        menuEdit.add_command(label="Undo", command=lambda: editor.edit_undo(), accelerator="Ctrl+Z")
-        menuEdit.add_command(label="Redo", command=lambda: editor.edit_redo(), accelerator="Ctrl+Y")
-        menuEdit.add_separator()
-        menuEdit.add_command(label="Cut", command=main.cut, accelerator="Ctrl+X")
-        menuEdit.add_command(label="Copy", command=lambda: main.copy(editor), accelerator="Ctrl+C")
-        menuEdit.add_command(label="Paste", command=lambda: editor.insert(INSERT, editor.selection_get(selection='CLIPBOARD')), accelerator="Ctrl+V")
-        menuEdit.add_command(label="Select All", command=lambda: editor.tag_add(SEL, 1.0, END), accelerator="Ctrl+A")
-        menuEdit.add_separator()
-        menuEdit.add_command(label="Delete", command=lambda: editor.delete("sel.first", "sel.last"), accelerator="Del")
-        menuEdit.add_command(label="Delete All", command=lambda: editor.delete(1.0, END), accelerator="Shift+Del")
-        menuEdit.add_command(label="Keep", command=main.keep, accelerator="Ctrl+K")
-        menuEdit.add_separator()
-        menuEdit.add_command(label="Find", command=lambda: main.find_next(query.get(), 0, 0), accelerator="Ctrl+F")
-        menuEdit.add_command(label="Replace", command=main.replace, accelerator="Ctrl+R")
-        menuEdit.add_command(label="Go To", command=main.go_to, accelerator="Ctrl+G")
-        menuEdit.add_separator()
-        menuEdit.add_command(label="Underline", command=main.underline, accelerator="Ctrl+U")
-        menuInsert = Menu(buttonInsert, tearoff=False)
-        buttonInsert.configure(menu=menuInsert)
-        menuInsert.add_command(label="Calendar (year)", command=lambda: editor.insert(INSERT, str(calendar.calendar(int(datetime.datetime.now().year)))))
-        menuInsert.add_command(label="Calendar (month)", command=lambda: editor.insert(INSERT, str(calendar.month(int(datetime.datetime.now().year), int(datetime.datetime.now().month)))))
-        menuInsert.add_command(label="Bullet", command=lambda: editor.insert(INSERT, "• "))
-        menuInsert.add_command(label="Date & Time", command=lambda: editor.insert(INSERT, datetime.datetime.now()))
-        menuInsert.add_separator()
-        menuInsert.add_command(label="Filename", command=lambda: editor.insert(INSERT, filepath.split("/")[len(filepath.split("/")) - 1]))
-        menuView = Menu(buttonView, tearoff=False)
-        buttonView.configure(menu=menuView)
-        menuSidebar = Menu(root, tearoff=False)
-        menuView.add_cascade(label="Sidebar", menu=menuSidebar)
-        menuSidebar.add_command(label="Hide", command=lambda: main.sidebar("h"), accelerator="Ctrl+,")
-        menuSidebar.add_command(label="Left", command=lambda: main.sidebar("l"), accelerator="Ctrl+.")
-        menuSidebar.add_command(label="Right", command=lambda: main.sidebar("r"), accelerator="Ctrl+/")    
-        menuView.add_command(label="Status Bar", command=main.status_bar.toggle, accelerator="F9")
-        menuView.add_separator()
-        menuView.add_command(label="Font", command=main.font, accelerator="F6")
-        menuAlign = Menu(root, tearoff=False)
-        menuView.add_cascade(label="Align", menu=menuAlign)
-        menuAlign.add_command(label="Left", command=lambda: main.align("left"))
-        menuAlign.add_command(label="Center", command=lambda: main.align("center"))
-        menuAlign.add_command(label="Right", command=lambda: main.align("right"))
-        menuView.add_separator()
-        menuTheme = Menu(root, tearoff=False)
-        menuView.add_cascade(label="Theme", menu=menuTheme)
-        menuTheme.add_command(label="Aa", command=lambda: main.theme("#fff", "#000", "#f0f0f0", "#000"), background="#fff", foreground="#000")
-        menuTheme.add_command(label="Aa", command=lambda: main.theme("#dcb", "#000", "#654", "#fff"), background="#dcb", foreground="#000")
-        menuTheme.add_command(label="Aa", command=lambda: main.theme("#333", "#fff", "#345", "#fff"), background="#333", foreground="#fff")
-        menuTheme.add_command(label="Aa", command=lambda: main.theme("#000", "#fff", "#000", "#0f0"), background="#000", foreground="#fff")
-        menuView.add_command(label="Full Screen", command=main.full_screen, accelerator="F11")
-        editor = scrolledtext.ScrolledText(frameEditor, bd=16, relief=FLAT, undo=True, font=("Consolas", 11, "normal"))
-        editor.grid(row=1, column=0, sticky="nsew")
-        status_bar = tk_Label(frameEditor, border=5, anchor="w")
-        sidebar = Frame(root)
-        sidebar.rowconfigure(1, weight=1)
-        sidebar.columnconfigure(0, weight=1)
-        menu_bar_sidebar = Frame(sidebar, border=5)
-        menu_bar_sidebar.grid(row=0, column=0, sticky="nsew")
-        buttonWidgets = Menubutton(menu_bar_sidebar, text="Note")
-        buttonWidgets.grid(row=0, column=0, sticky="nsew")
-        menuWidgets = Menu(buttonWidgets, tearoff=False)
-        buttonWidgets.configure(menu=menuWidgets)
-        menuWidgets.add_command(label="Note", command=main.note)
-        menuWidgets.add_command(label="Calculator", command=main.calculator)
-        buttonOptions = Menubutton(menu_bar_sidebar, text="Options")
-        buttonOptions.grid(row=0, column=1, sticky="nsew")
-        menuOptions = Menu(buttonOptions, tearoff=False)
-        buttonOptions.configure(menu=menuOptions)
-        menuOptions.add_command(label="Editor > Note", command=lambda: note.insert(END, editor.get(1.0, END)))
-        menuOptions.add_command(label="Note > Editor", command=lambda: editor.insert(END, note.get(1.0, END)))
-        menuOptions.add_command(label="Save As", command=lambda: open(filedialog.asksaveasfilename(defaultextension='.btxt', filetypes=[('All Files', '*.*')]), 'w').write(str(datetime.datetime.now().date())+"\n\n"+note.get(1.0, END)))
-        menuOptions.add_separator()
-        menuColor = Menu(buttonOptions, tearoff=False)
-        menuOptions.add_cascade(label="Color", menu=menuColor)
-        menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#fc5", fg="#000"), background="#fc5", foreground="#000")
-        menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#5cf", fg="#000"), background="#5cf", foreground="#000")
-        menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#d8d", fg="#000"), background="#d8d", foreground="#000")
-        menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#8d8", fg="#000"), background="#8d8", foreground="#000")
-        menuOptions.add_separator()
-        menuOptions.add_command(label="Undo", command=lambda: note.edit_undo())
-        menuOptions.add_command(label="Redo", command=lambda: note.edit_redo())
-        menuOptions.add_command(label="Copy", command=lambda: main.copy(note))
-        menuOptions.add_command(label="Delete All", command=lambda: note.delete(1.0, END))
-        note = Text(sidebar, bd=16, relief=FLAT, undo=True, background="#fc5", foreground="#000", font=("Consolas", 11), width=36, height=100)
-        note.grid(row=1, column=0, sticky="nsew")
-        calc = Frame(sidebar, width=36)
-        calc.rowconfigure(1, weight=1)
-        calc.columnconfigure(0, weight=1)
-        bar = Entry(calc, font=("", 12))
-        bar.grid(row=0, column=0, sticky="nsew", ipady=8)
-        frameCalculator = Frame(calc)
-        frameCalculator.grid(row=1, column=0, sticky="nsew")
-        Button(frameCalculator, text="bin", command=lambda: main.calculate("bin")).grid(row=0, column=0, sticky="nsew")
-        Button(frameCalculator, text="oct", command=lambda: main.calculate("oct")).grid(row=0, column=1, sticky="nsew")
-        Button(frameCalculator, text="hex", command=lambda: main.calculate("hex")).grid(row=0, column=2, sticky="nsew")
-        Button(frameCalculator, text="1/x", command=lambda: main.calculate("inv")).grid(row=0, column=3, sticky="nsew")
-        Button(frameCalculator, text="x²", command=lambda: main.calculate("sq")).grid(row=1, column=0, sticky="nsew")
-        Button(frameCalculator, text="x³", command=lambda: main.calculate("sq3")).grid(row=1, column=1, sticky="nsew")
-        Button(frameCalculator, text="√", command=lambda: main.calculate("sqrt")).grid(row=1, column=2, sticky="nsew")
-        Button(frameCalculator, text="+", command=lambda: bar.insert(INSERT, " + ")).grid(row=1, column=3, sticky="nsew")
-        Button(frameCalculator, text="7", command=lambda: bar.insert(INSERT, "7")).grid(row=2, column=0, sticky="nsew")
-        Button(frameCalculator, text="8", command=lambda: bar.insert(INSERT, "8")).grid(row=2, column=1, sticky="nsew")
-        Button(frameCalculator, text="9", command=lambda: bar.insert(INSERT, "9")).grid(row=2, column=2, sticky="nsew")
-        Button(frameCalculator, text="-", command=lambda: bar.insert(INSERT, " - ")).grid(row=2, column=3, sticky="nsew")
-        Button(frameCalculator, text="4", command=lambda: bar.insert(INSERT, "4")).grid(row=3, column=0, sticky="nsew")
-        Button(frameCalculator, text="5", command=lambda: bar.insert(INSERT, "5")).grid(row=3, column=1, sticky="nsew")
-        Button(frameCalculator, text="6", command=lambda: bar.insert(INSERT, "6")).grid(row=3, column=2, sticky="nsew")
-        Button(frameCalculator, text="x", command=lambda: bar.insert(INSERT, " * ")).grid(row=3, column=3, sticky="nsew")
-        Button(frameCalculator, text="1", command=lambda: bar.insert(INSERT, "1")).grid(row=4, column=0, sticky="nsew")
-        Button(frameCalculator, text="2", command=lambda: bar.insert(INSERT, "2")).grid(row=4, column=1, sticky="nsew")
-        Button(frameCalculator, text="3", command=lambda: bar.insert(INSERT, "3")).grid(row=4, column=2, sticky="nsew")
-        Button(frameCalculator, text="÷", command=lambda: bar.insert(INSERT, " / ")).grid(row=4, column=3, sticky="nsew")
-        Button(frameCalculator, text="C", command=lambda: bar.delete(0, END)).grid(row=5, column=0, sticky="nsew")
-        Button(frameCalculator, text="0", command=lambda: bar.insert(INSERT, "0")).grid(row=5, column=1, sticky="nsew")
-        Button(frameCalculator, text=".", command=lambda: bar.insert(INSERT, ".")).grid(row=5, column=2, sticky="nsew")
-        Button(frameCalculator, text="=", command=lambda: main.calculate("eq")).grid(row=5, column=3, sticky="nsew")
-        for i in range(0, 6):
-            frameCalculator.rowconfigure(i, weight=1)
-        for j in range(0, 4):
-            frameCalculator.columnconfigure(j, weight=1)
-        root.bind("<Control-n>", lambda i: main.file("n"))
-        root.bind("<Control-N>", lambda i: main.file("n"))
-        root.bind("<Control-o>", lambda i: main.file("o"))
-        root.bind("<Control-O>", lambda i: main.file("o"))
-        root.bind("<Control-s>", lambda i: main.file("s"))
-        root.bind("<Control-S>", lambda i: main.file("s"))
-        root.bind("<Control-Shift-s>", lambda i: main.file("e"))
-        root.bind("<Control-Shift-S>", lambda i: main.file("e"))
-        root.bind("<Control-p>", lambda i: os.startfile(filepath, "print"))
-        root.bind("<Control-P>", lambda i: os.startfile(filepath, "print"))
-        root.bind("<Control-q>", lambda i: main.delete())
-        root.bind("<Control-Q>", lambda i: main.delete())
-        root.bind("<Control-f>", lambda i: main.find_next(query.get(), 0, 0))
-        root.bind("<Control-F>", lambda i: main.find_next(query.get(), 0, 0))
-        root.bind("<Control-r>", lambda i: main.replace())
-        root.bind("<Control-R>", lambda i: main.replace())
-        root.bind("<Control-g>", lambda i: main.go_to())
-        root.bind("<Control-G>", lambda i: main.go_to())
-        root.bind("<Control-k>", lambda i: main.keep())
-        root.bind("<Control-K>", lambda i: main.keep())
-        root.bind("<Shift-Delete>", lambda i: editor.delete(1.0,END))
-        root.bind("<Control-u>", lambda i: main.underline())
-        root.bind("<Control-U>", lambda i: main.underline())
-        root.bind("<Control-w>", lambda i: root.destroy())
-        root.bind("<Control-W>", lambda i: root.destroy())
-        root.bind("<Control-,>", lambda i: main.sidebar("h"))
-        root.bind("<Control-.>", lambda i: main.sidebar("l"))
-        root.bind("<Control-/>", lambda i: main.sidebar("r"))
-        root.bind("<Control-Insert>", lambda i: main.copy(editor))
-        root.bind("<Insert>", lambda i: editor.insert(INSERT, editor.selection_get(selection='CLIPBOARD')))
-        root.bind("<F1>", lambda i: main.about())
-        root.bind("<F2>", lambda i: main.license())
-        root.bind("<F3>", lambda i: main.find_next(query.get(), 0, 0))
-        root.bind("<F5>", lambda i: main.file("o"))
-        root.bind("<F6>", lambda i: main.font())
-        root.bind("<F7>", lambda i: main.read_mode())
-        root.bind("<F8>", lambda i: main.switch_theme())
-        root.bind("<F9>", lambda i: main.status_bar.toggle())
-        root.bind("<F10>", lambda i: query.focus_set())
-        root.bind("<F11>", lambda i: main.full_screen())
-        root.bind("<F12>", lambda i: main.file("e"))
-        editor.bind("<KeyRelease>", lambda i: main.status_bar.refresh())
-        editor.bind("<Button-1>", lambda i: main.status_bar.refresh())
-        editor.bind("<Button-3>", main.b3_edit)
-        note.bind("<Button-3>", main.b3_note)
-        bar.bind("<Return>", lambda i: main.calculate("eq"))
-        root.mainloop()
+    except:
+        root.iconbitmap("")
+    root.rowconfigure(1, weight=1)
+    root.columnconfigure(0, weight=1)
+    root.protocol('WM_DELETE_WINDOW', lambda: main.exit())
+    menuFile = Menu(root, tearoff=False, activeborderwidth=2.5)
+    menuFile.add_command(label="New", command=main.new, accelerator="Ctrl+N")
+    menuFile.add_command(label="Open", command=main.open, accelerator="Ctrl+O")
+    menuFile.add_command(label="Save", command=main.save, accelerator="Ctrl+S")
+    menuFile.add_command(label="Save As", command=main.save_as, accelerator="Ctrl+Shift+S")
+    menuFile.add_separator()
+    menuFile.add_command(label="Print", command=lambda: os.startfile(filepath, "print"), accelerator="Ctrl+P")
+    menuFile.add_command(label="Duplicate", command=main.duplicate, accelerator="Ctrl+D")
+    menuFile.add_separator()
+    menuFile.add_command(label="Read Mode", command=main.read_mode, accelerator="Ctrl+E")
+    menuFile.add_separator()
+    menuFile.add_command(label="Exit", command=main.exit, accelerator="Alt+F4")
+    menuEdit = Menu(root, tearoff=False, activeborderwidth=2.5)
+    menuEdit.add_command(label="Undo", command=lambda: editor.edit_undo(), accelerator="Ctrl+Z")
+    menuEdit.add_command(label="Redo", command=lambda: editor.edit_redo(), accelerator="Ctrl+Y")
+    menuEdit.add_separator()
+    menuEdit.add_command(label="Cut", command=lambda: main.cut(), accelerator="Ctrl+X")
+    menuEdit.add_command(label="Copy", command=lambda: main.copy(editor), accelerator="Ctrl+C")
+    menuEdit.add_command(label="Paste", command=lambda: editor.insert(INSERT, editor.selection_get(selection='CLIPBOARD')), accelerator="Ctrl+V")
+    menuEdit.add_command(label="Select All", command=lambda: editor.tag_add(SEL, 1.0, END), accelerator="Ctrl+A")
+    menuEdit.add_separator()
+    menuDelete = Menu(root, tearoff=False, activeborderwidth=2.5)
+    menuEdit.add_cascade(label="Delete", menu=menuDelete, accelerator="Del")
+    menuDelete.add_command(label="Delete", command=lambda: editor.delete(SEL_FIRST, SEL_LAST), accelerator="Del")
+    menuDelete.add_command(label="Delete All", command=lambda: editor.delete(1.0, END), accelerator="Shift+Del")
+    menuDelete.add_command(label="Keep", command=main.keep, accelerator="Ctrl+K")
+    menuDelete.add_separator()
+    menuDelete.add_command(label="Before", command=lambda: editor.delete(1.0, editor.index(INSERT)), accelerator="Ctrl+BS")
+    menuDelete.add_command(label="After", command=lambda: editor.delete(editor.index(INSERT), END), accelerator="Ctrl+Del")
+    menuEdit.add_separator()
+    menuEdit.add_command(label="Find", command=lambda: main.find_next(find.get()), accelerator="Ctrl+F")
+    menuEdit.add_command(label="Replace", command=lambda: main.replace_next(find.get(), replace.get()), accelerator="Ctrl+R")
+    menuEdit.add_command(label="Go To", command=main.go_to, accelerator="Ctrl+G")
+    menuEdit.add_separator()
+    menuFormat = Menu(root, tearoff=False, activeborderwidth=2.5)
+    menuEdit.add_cascade(label="Format", menu=menuFormat, accelerator="F10")
+    menuFormat.add_command(label="Capitalize", command=lambda: main.capitalize("i", "chars[i]"))
+    menuFormat.add_command(label="Standard", command=lambda: main.capitalize("chars[i]", "i"))
+    menuFormat.add_separator()
+    menuFormat.add_command(label="List", command=main.list)
+    menuFormat.add_command(label="Underline", command=lambda: main.line("̲"))
+    menuFormat.add_command(label="Double Underline", command=lambda: main.line("̳"))
+    menuFormat.add_command(label="Strikethrough", command=lambda: main.line("̶"))
+    menuEdit.add_command(label="Font", command=lambda: main.font(), accelerator="Ctrl+T")
+    menuInsert = Menu(root, tearoff=False, activeborderwidth=2.5)
+    menuInsert.add_command(label="Calendar (year)", command=lambda: editor.insert(INSERT, str(calendar.calendar(int(datetime.datetime.now().year)))))
+    menuInsert.add_command(label="Calendar (month)", command=lambda: editor.insert(INSERT, str(calendar.month(int(datetime.datetime.now().year), int(datetime.datetime.now().month)))))
+    menuInsert.add_command(label="Week Number", command=lambda: editor.insert(INSERT, "Week " + str(int(datetime.datetime.now().isocalendar().week))))
+    menuInsert.add_command(label="Date & Time", command=lambda: editor.insert(INSERT, datetime.datetime.now()))
+    menuInsert.add_separator()
+    menuInsert.add_command(label="Finance", command=lambda: editor.insert(INSERT, "\t\tIncome\t\tCost\t\tSavings\nJanuary\t\t\t\t\t\t\nFebruary\t\t\t\t\t\t\nMarch\t\t\t\t\t\t\nApril\t\t\t\t\t\t\nMay\t\t\t\t\t\t\nJune\t\t\t\t\t\t\nJuly\t\t\t\t\t\t\nAugust\t\t\t\t\t\t\nSeptember\t\t\t\t\t\t\nOctober\t\t\t\t\t\t\nNovember\t\t\t\t\t\t\nDecember\t\t\t\t\t\t\n------------------------------------------------------------\nTotal\t\t\t\t\t\t"))
+    menuView = Menu(root, tearoff=False, activeborderwidth=2.5)
+    menuSidebar = Menu(root, tearoff=False, activeborderwidth=2.5)
+    menuView.add_cascade(label="Sidebar", menu=menuSidebar)
+    menuSidebar.add_command(label="Hide", command=lambda: main.sidebar("h"), accelerator="Ctrl+,")
+    menuSidebar.add_command(label="Left", command=lambda: main.sidebar("l"), accelerator="Ctrl+.")
+    menuSidebar.add_command(label="Right", command=lambda: main.sidebar("r"), accelerator="Ctrl+/")
+    menuSidebar.add_separator()
+    menuSidebar.add_command(label="Maximize", command=lambda: main.sidebar("m"), accelerator="Ctrl+M")
+    menuView.add_separator()
+    menuView.add_command(label="Clipboard", command=lambda: messagebox.showinfo("Clipboard", editor.selection_get(selection="CLIPBOARD")), accelerator="F8")
+    menuWrap = Menu(root, tearoff=False, activeborderwidth=2.5)
+    menuView.add_cascade(label="Wrap", menu=menuWrap)
+    menuWrap.add_command(label="Disabled", command=lambda: editor.configure(wrap=NONE))
+    menuWrap.add_command(label="Word", command=lambda: editor.configure(wrap=WORD))
+    menuWrap.add_command(label="Character", command=lambda: editor.configure(wrap=CHAR))
+    menuView.add_separator()
+    menuTheme = Menu(root, tearoff=False, activeborderwidth=2.5)
+    menuView.add_cascade(label="Theme", menu=menuTheme)
+    menuTheme.add_command(label="Aa", command=lambda: main.theme("#fff", "#f0f0f0", "#e0e0e0", "#000", "#e0e0e0", "#000"), background="#fff", foreground="#000", activebackground="#080", activeforeground="#fff")
+    menuTheme.add_command(label="Aa", command=lambda: main.theme("#dcb", "#f0f0f0", "#bead9c", "#000", "#e0e0e0", "#000"), background="#dcb", foreground="#000", activebackground="#080", activeforeground="#fff")
+    menuTheme.add_command(label="Aa", command=lambda: main.theme("#222", "#f0f0f0", "#505050", "#fff", "#e0e0e0", "#000"), background="#222", foreground="#fff", activebackground="#080", activeforeground="#fff")
+    menuTheme.add_command(label="Aa", command=lambda: main.theme("#191919", "#000", "#2e2e2e", "#fff", "#313131", "#fff"), background="#0f0f0f", foreground="#fff", activebackground="#080", activeforeground="#fff")
+    menuView.add_command(label="Full Screen", command=main.full_screen, accelerator="F11")
+    menu_bar_editor = Frame(root, border=4)
+    menu_bar_editor.grid(row=0, column=0, sticky=NSEW)
+    menu_bar_editor.columnconfigure(4, weight=1)
+    buttonFile = Menubutton(menu_bar_editor, text="File", style="TButton", width=10, menu=menuFile)
+    buttonFile.grid(row=0, column=0, sticky=NSEW)
+    buttonEdit = Menubutton(menu_bar_editor, text="Edit", style="TButton", width=10, menu=menuEdit)
+    buttonEdit.grid(row=0, column=1, sticky=NSEW)
+    buttonInsert = Menubutton(menu_bar_editor, text="Insert", style="TButton", width=10, menu=menuInsert)
+    buttonInsert.grid(row=0, column=2, sticky=NSEW)
+    buttonView = Menubutton(menu_bar_editor, text="View", style="TButton", width=10, menu=menuView)
+    buttonView.grid(row=0, column=3, sticky=NSEW)
+    frameSearch = Frame(menu_bar_editor)
+    frameSearch.grid(row=0, column=4, sticky=NSEW)
+    frameSearch.columnconfigure(0, weight=1)
+    query = Entry(frameSearch)
+    query.grid(row=0, column=0, sticky=EW, ipady=1)
+    search = Button(frameSearch, text="Search", command=lambda: main.find_next(query.get()))
+    search.grid(row=0, column=1, sticky=NSEW)
+    frameFont = Frame(menu_bar_editor)
+    frameFont.columnconfigure(0, weight=1)
+    frameFont.columnconfigure(2, weight=1)
+    font_family = Combobox(frameFont, values=font.families())
+    font_family.grid(row=0, column=0, sticky="ew")
+    font_family.insert(INSERT, "Consolas")
+    size = Combobox(frameFont, values=("8", "9", "10", "11", "12", "14", "16", "18", "20", "22", "24", "26", "28", "36", "48", "72"))
+    size.grid(row=0, column=1, sticky="ew")
+    size.insert(INSERT, "11")
+    style = Combobox(frameFont, values=("normal", "bold", "italic", "bold italic", "underline", "bold underline", "italic underline", "bold italic underline", "overstrike", "bold overstrike", "italic overstrike", "bold italic overstrike", "underline overstrike", "bold underline overstrike", "italic underline overstrike", "bold italic underline overstrike"))
+    style.grid(row=0, column=2, sticky="ew")
+    style.insert(INSERT, "normal")
+    action_button = Button(frameFont, text="OK", command=lambda: main.change_font(font_family.get(), int(size.get()), style.get()))
+    action_button.grid(row=0, column=3, sticky=NSEW)
+    editor = scrolledtext.ScrolledText(root, bd=16, relief=FLAT, undo=True, wrap=WORD, font=("Consolas", 11, "normal"))
+    editor.grid(row=1, column=0, sticky=NSEW)
+    menu_bar_sidebar = Frame(root, border=4)
+    menu_bar_sidebar.columnconfigure(0, weight=1)
+    menuWidgets = Menu(root, tearoff=False, activeborderwidth=2.5)
+    menuWidgets.add_command(label="Note", command=main.note)
+    menuWidgets.add_command(label="Calculator", command=main.calculator)
+    menuWidgets.add_command(label="Help", command=main.help)
+    menuWidgets.add_command(label="Replace", command=main.replace)
+    buttonWidgets = Menubutton(menu_bar_sidebar, text="Widgets", style="TButton", width=10, menu=menuWidgets)
+    buttonWidgets.grid(row=0, column=0, sticky=NSEW)
+    sidebar = Frame(root)
+    sidebar.rowconfigure(0, weight=1)
+    sidebar.columnconfigure(0, weight=1)
+    note = Text(sidebar, bd=16, relief=FLAT, undo=True, background="#fc5", foreground="#000", font=("Consolas", 11), width=36)
+    menuOptions = Menu(root, tearoff=False, activeborderwidth=2.5)
+    menuOptions.add_command(label="Editor >> Note", command=lambda: note.insert(END, editor.get(1.0, END)))
+    menuOptions.add_command(label="Note >> Editor", command=lambda: editor.insert(END, note.get(1.0, END)))
+    menuOptions.add_command(label="Save As", command=lambda: open(filedialog.asksaveasfilename(defaultextension=".btxt", filetypes=[("All Files", "*.*")]), "w").write(str(datetime.datetime.now().date())+"\n\n"+note.get(1.0, END)))
+    menuOptions.add_separator()
+    menuOptions.add_command(label="Undo", command=note.edit_undo)
+    menuOptions.add_command(label="Redo", command=note.edit_redo)
+    menuOptions.add_command(label="Copy", command=lambda: main.copy(note))
+    menuOptions.add_command(label="Delete All", command=lambda: note.delete(1.0, END))
+    menuOptions.add_separator()
+    menuColor = Menu(root, tearoff=False, activeborderwidth=2.5)
+    menuOptions.add_cascade(label="Color", menu=menuColor)
+    menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#fc5"), background="#fc5", foreground="#000", activebackground="#000", activeforeground="#fff")
+    menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#5cf"), background="#5cf", foreground="#000", activebackground="#000", activeforeground="#fff")
+    menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#d8d"), background="#d8d", foreground="#000", activebackground="#000", activeforeground="#fff")
+    menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#8d8"), background="#8d8", foreground="#000", activebackground="#000", activeforeground="#fff")
+    calc = Frame(sidebar, width=36)
+    calc.rowconfigure(1, weight=1)
+    calc.columnconfigure(0, weight=1, minsize=320)
+    bar = Entry(calc, font=("", 12))
+    bar.grid(row=0, column=0, sticky=NSEW, ipady=8)
+    frameCalculator = Frame(calc)
+    frameCalculator.grid(row=1, column=0, sticky=NSEW)
+    for i in range(0, 6):
+        frameCalculator.rowconfigure(i, weight=1)
+    for j in range(0, 4):
+        frameCalculator.columnconfigure(j, weight=1)
+    Button(frameCalculator, text="bin", command=lambda: main.calculate(str(bin(int(eval(bar.get())))))).grid(row=0, column=0, sticky=NSEW)
+    Button(frameCalculator, text="oct", command=lambda: main.calculate(str(oct(int(eval(bar.get())))))).grid(row=0, column=1, sticky=NSEW)
+    Button(frameCalculator, text="hex", command=lambda: main.calculate(str(hex(int(eval(bar.get())))))).grid(row=0, column=2, sticky=NSEW)
+    Button(frameCalculator, text="^", command=lambda: bar.insert(INSERT, " ** ")).grid(row=0, column=3, sticky=NSEW)
+    Button(frameCalculator, text="x²", command=lambda: main.calculate(str(eval(bar.get()) ** 2))).grid(row=1, column=0, sticky=NSEW)
+    Button(frameCalculator, text="√", command=lambda: main.calculate(str(math.sqrt(eval(bar.get()))))).grid(row=1, column=1, sticky=NSEW)
+    Button(frameCalculator, text="1/x", command=lambda: main.calculate(str(1/float(eval(bar.get()))))).grid(row=1, column=2, sticky=NSEW)
+    Button(frameCalculator, text="+", command=lambda: bar.insert(INSERT, " + ")).grid(row=1, column=3, sticky=NSEW)
+    Button(frameCalculator, text="7", command=lambda: bar.insert(INSERT, "7")).grid(row=2, column=0, sticky=NSEW)
+    Button(frameCalculator, text="8", command=lambda: bar.insert(INSERT, "8")).grid(row=2, column=1, sticky=NSEW)
+    Button(frameCalculator, text="9", command=lambda: bar.insert(INSERT, "9")).grid(row=2, column=2, sticky=NSEW)
+    Button(frameCalculator, text="-", command=lambda: bar.insert(INSERT, " - ")).grid(row=2, column=3, sticky=NSEW)
+    Button(frameCalculator, text="4", command=lambda: bar.insert(INSERT, "4")).grid(row=3, column=0, sticky=NSEW)
+    Button(frameCalculator, text="5", command=lambda: bar.insert(INSERT, "5")).grid(row=3, column=1, sticky=NSEW)
+    Button(frameCalculator, text="6", command=lambda: bar.insert(INSERT, "6")).grid(row=3, column=2, sticky=NSEW)
+    Button(frameCalculator, text="x", command=lambda: bar.insert(INSERT, " * ")).grid(row=3, column=3, sticky=NSEW)
+    Button(frameCalculator, text="1", command=lambda: bar.insert(INSERT, "1")).grid(row=4, column=0, sticky=NSEW)
+    Button(frameCalculator, text="2", command=lambda: bar.insert(INSERT, "2")).grid(row=4, column=1, sticky=NSEW)
+    Button(frameCalculator, text="3", command=lambda: bar.insert(INSERT, "3")).grid(row=4, column=2, sticky=NSEW)
+    Button(frameCalculator, text="÷", command=lambda: bar.insert(INSERT, " / ")).grid(row=4, column=3, sticky=NSEW)
+    Button(frameCalculator, text="C", command=lambda: bar.delete(0, END)).grid(row=5, column=0, sticky=NSEW)
+    Button(frameCalculator, text="0", command=lambda: bar.insert(INSERT, "0")).grid(row=5, column=1, sticky=NSEW)
+    Button(frameCalculator, text=".", command=lambda: bar.insert(INSERT, ".")).grid(row=5, column=2, sticky=NSEW)
+    Button(frameCalculator, text="=", command=lambda: main.calculate(eval(bar.get()))).grid(row=5, column=3, sticky=NSEW)
+    help_tabs = Notebook(sidebar, width=320)
+    about = Text(help_tabs, relief=FLAT, border=16, font=("Consolas", 11, "underline"), wrap=WORD, background="#dcb")
+    about.insert(INSERT, "BTXTPad - A text editor\nCopyright (C) 2022-" + str(datetime.datetime.now().year) +": Waylon Boer\n\nBTXTPad is a simple text editor. BTXTPad has some additional features, for example a sidebar. The default file format is .btxt, but BTXTPad can also edit other plain text files. There is also a standalone notetaking app available: BTXTPad Note.\n\nThank you for using BTXTPad!")
+    about.configure(state=DISABLED)
+    help_tabs.add(about, text="About")
+    mit_license = Text(help_tabs, relief=FLAT, border=16, font=("Consolas", 11), wrap=WORD, background="#f0f0f0")
+    mit_license.insert(INSERT, """Copyright (c) 2022 Waylon Boer\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR a PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.""")
+    mit_license.configure(state=DISABLED)
+    help_tabs.add(mit_license, text="License")
+    frameReplace = Frame(sidebar, width=36)
+    for i in range(1, 7):
+        frameReplace.rowconfigure(i, weight=1)
+    frameReplace.columnconfigure(0, weight=1)
+    f = Frame(frameReplace, border=16)
+    f.grid(row=0, column=0, sticky=NSEW)
+    f.columnconfigure(1, weight=1)
+    Label(f, text="Find", width=12).grid(row=0, column=0, sticky=EW, ipady=5)
+    find = Entry(f)
+    find.grid(row=0, column=1, sticky=NSEW)
+    Label(f, text="Replace", width=12).grid(row=1, column=0, sticky=EW, ipady=5)
+    replace = Entry(f)
+    replace.grid(row=1, column=1, sticky=NSEW)
+    Label(f, text="Line", width=12).grid(row=2, column=0, sticky=EW, ipady=5)
+    ln = Entry(f)
+    ln.grid(row=2, column=1, sticky=NSEW)
+    ln.insert(INSERT, str(editor.index(INSERT)).split(".")[0])
+    Label(f, text="Colunn", width=12).grid(row=3, column=0, sticky=EW, ipady=5)
+    col = Entry(f)
+    col.grid(row=3, column=1, sticky=NSEW)
+    col.insert(INSERT, str(editor.index(INSERT)).split(".")[1])
+    Button(frameReplace, text="Find", command=lambda: main.find_next(find.get())).grid(row=1, column=0, sticky=NSEW)
+    Button(frameReplace, text="Replace", command=lambda: main.replace_next(find.get(), replace.get())).grid(row=2, column=0, sticky=NSEW)
+    Button(frameReplace, text="Replace All", command=lambda: main.replace_all(find.get(), replace.get())).grid(row=3, column=0, sticky=NSEW)
+    Button(frameReplace, text="Delete", command=lambda: main.replace_next(find.get(), "")).grid(row=4, column=0, sticky=NSEW)
+    Button(frameReplace, text="Hide", command=lambda: main.replace_next(find.get(), len(find.get()) * "_")).grid(row=5, column=0, sticky=NSEW)
+    Button(frameReplace, text="Go To", command=main.go_to).grid(row=6, column=0, sticky=NSEW)
+    main.theme("#fff", "#f0f0f0", "#e0e0e0", "#000", "#e0e0e0", "#000")
+    main.note()
+    editor.focus_set()
+    root.bind("<Control-d>", lambda i: main.duplicate())
+    root.bind("<Control-D>", lambda i: main.duplicate())
+    root.bind("<Control-e>", lambda i: main.read_mode())
+    root.bind("<Control-E>", lambda i: main.read_mode())
+    root.bind("<Control-f>", lambda i: main.find_next(find.get()))
+    root.bind("<Control-F>", lambda i: main.find_next(find.get()))
+    root.bind("<Control-g>", lambda i: main.go_to())
+    root.bind("<Control-G>", lambda i: main.go_to())
+    root.bind("<Control-k>", lambda i: main.keep())
+    root.bind("<Control-K>", lambda i: main.keep())
+    root.bind("<Control-m>", lambda i: main.sidebar("m"))
+    root.bind("<Control-M>", lambda i: main.sidebar("m"))
+    root.bind("<Control-n>", lambda i: main.new())
+    root.bind("<Control-N>", lambda i: main.new())
+    root.bind("<Control-o>", lambda i: main.open())
+    root.bind("<Control-O>", lambda i: main.open())
+    root.bind("<Control-s>", lambda i: main.save())
+    root.bind("<Control-S>", lambda i: main.save())
+    root.bind("<Control-Shift-s>", lambda i: main.save_as())
+    root.bind("<Control-Shift-S>", lambda i: main.save_as())
+    root.bind("<Control-t>", lambda i: main.font)
+    root.bind("<Control-T>", lambda i: main.font)
+    root.bind("<Control-p>", lambda i: os.startfile(filepath, "print"))
+    root.bind("<Control-P>", lambda i: os.startfile(filepath, "print"))
+    root.bind("<Control-r>", lambda i: main.replace_next(find.get(), replace.get()))
+    root.bind("<Control-R>", lambda i: main.replace_next(find.get(), replace.get()))
+    root.bind("<Control-u>", lambda i: main.line("̲"))
+    root.bind("<Control-U>", lambda i: main.line("̲"))
+    root.bind("<Control-Shift-u>", lambda i: main.line("̳"))
+    root.bind("<Control-Shift-U>", lambda i: main.line("̳"))
+    root.bind("<Control-w>", lambda i: main.exit())
+    root.bind("<Control-W>", lambda i: main.exit())
+    root.bind("<Control-,>", lambda i: main.sidebar("h"))
+    root.bind("<Control-.>", lambda i: main.sidebar("l"))
+    root.bind("<Control-/>", lambda i: main.sidebar("r"))
+    root.bind("<Shift-Delete>", lambda i: editor.delete(1.0, END))
+    root.bind("<Control-BackSpace>", lambda i: editor.delete(1.0, editor.index(INSERT)))
+    root.bind("<Control-Delete>", lambda i: editor.delete(editor.index(INSERT), END))
+    root.bind("<Control-Insert>", lambda i: main.copy(editor))
+    root.bind("<Insert>", lambda i: editor.insert(INSERT, editor.selection_get(selection="CLIPBOARD")))
+    root.bind("<Alt-f>", lambda i: menuFile.tk_popup(buttonFile.winfo_rootx(), buttonFile.winfo_rooty()+25))
+    root.bind("<Alt-F>", lambda i: menuFile.tk_popup(buttonFile.winfo_rootx(), buttonFile.winfo_rooty()+25))
+    root.bind("<Alt-e>", lambda i: menuEdit.tk_popup(buttonEdit.winfo_rootx(), buttonEdit.winfo_rooty()+25))
+    root.bind("<Alt-E>", lambda i: menuEdit.tk_popup(buttonEdit.winfo_rootx(), buttonEdit.winfo_rooty()+25))
+    root.bind("<Alt-i>", lambda i: menuInsert.tk_popup(buttonInsert.winfo_rootx(), buttonInsert.winfo_rooty()+25))
+    root.bind("<Alt-I>", lambda i: menuInsert.tk_popup(buttonInsert.winfo_rootx(), buttonInsert.winfo_rooty()+25))
+    root.bind("<Alt-v>", lambda i: menuView.tk_popup(buttonView.winfo_rootx(), buttonView.winfo_rooty()+25))
+    root.bind("<Alt-V>", lambda i: menuView.tk_popup(buttonView.winfo_rootx(), buttonView.winfo_rooty()+25))
+    root.bind("<Alt-q>", lambda i: query.focus_set())
+    root.bind("<Alt-Q>", lambda i: query.focus_set())
+    root.bind("<Alt-s>", lambda i: main.find_next(query.get()))
+    root.bind("<Alt-S>", lambda i: main.find_next(query.get()))
+    root.bind("<F1>", lambda i: main.help())
+    root.bind("<F2>", lambda i: editor.delete(editor.index(INSERT), END))
+    root.bind("<F3>", lambda i: main.find_next(query.get()))
+    root.bind("<F5>", lambda i: main.open())
+    root.bind("<F6>", lambda i: main.font())
+    root.bind("<F7>", lambda i: main.read_mode())
+    root.bind("<F8>", lambda i: messagebox.showinfo("Clipboard", editor.selection_get(selection="CLIPBOARD")))
+    root.bind("<F9>", lambda i: main.list())
+    root.bind("<F10>", lambda i: menuFormat.tk_popup(buttonEdit.winfo_rootx(), buttonEdit.winfo_rooty()+25))
+    root.bind("<F11>", lambda i: main.full_screen())
+    root.bind("<F12>", lambda i: main.save_as())
+    root.bind("<Control-[>", lambda i: main.theme("#fff", "#f0f0f0", "#ddd", "#000", "#e0e0e0", "#000"))
+    root.bind("<Control-]>", lambda i: main.theme("#dcb", "#f0f0f0", "#bead9c", "#000", "#e0e0e0", "#000"))
+    root.bind("<Control-;>", lambda i: main.theme("#222", "#f0f0f0", "#505050", "#fff", "#e0e0e0", "#000"))
+    root.bind("<Control-'>", lambda i: main.theme("#191919", "#000", "#2e2e2e", "#fff", "#313131", "#fff"))
+    editor.bind("<KeyPress>", lambda i: main.refresh_lc(ln, col))
+    editor.bind("<ButtonRelease>", lambda i: main.refresh_lc(ln, col))
+    editor.bind("<Button-3>", main.b3_edit)
+    note.bind("<Button-3>", main.b3_options)
+    bar.bind("<Return>", lambda i: main.calculate(eval(bar.get())))
+    root.mainloop()
