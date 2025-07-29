@@ -174,7 +174,7 @@ class main():
             editor.delete(SEL_FIRST, SEL_LAST)
             editor.clipboard_append(editor.get(SEL_FIRST, SEL_LAST))
         except:
-            editor.get(SEL_FIRST, SEL_LAST)
+            editor.get(1.0, END)
 
     def copy(self):
         self.clipboard_clear()
