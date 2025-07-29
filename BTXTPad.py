@@ -169,9 +169,12 @@ class main():
             editor.configure(state="disabled")
 
     def cut():
-        editor.clipboard_clear()
-        editor.delete(SEL_FIRST, SEL_LAST)
-        editor.clipboard_append(editor.get(SEL_FIRST, SEL_LAST))
+        try:
+            editor.clipboard_clear()
+            editor.delete(SEL_FIRST, SEL_LAST)
+            editor.clipboard_append(editor.get(SEL_FIRST, SEL_LAST))
+        except:
+            editor.get(SEL_FIRST, SEL_LAST)
 
     def copy(self):
         self.clipboard_clear()
