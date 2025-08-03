@@ -1,18 +1,4 @@
-
-
-
-
-
-
-
-
-b
-o
-h
-s
-r
-i
-efrom tkinter import *
+from tkinter import *
 from tkinter.ttk import *
 from tkinter import Label as tkLabel
 from tkinter import messagebox, simpledialog, font, filedialog, scrolledtext
@@ -957,3 +943,4 @@ if __name__ == "__main__":
     root.bind("<Motion>", lambda i: main.refresh())
     root.bind("<Key>", lambda i: main.refresh())
     root.mainloop()
+
