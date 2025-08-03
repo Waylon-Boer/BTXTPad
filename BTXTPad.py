@@ -1,4 +1,18 @@
-from tkinter import *
+
+
+
+
+
+
+
+
+b
+o
+h
+s
+r
+i
+efrom tkinter import *
 from tkinter.ttk import *
 from tkinter import Label as tkLabel
 from tkinter import messagebox, simpledialog, font, filedialog, scrolledtext
@@ -44,100 +58,13 @@ class main():
             for i in content.winfo_children():
                 i.grid_forget()
             editor.grid(row=0, column=0, sticky="nsew")
-        filepath = filedialog.askopenfilename(filetypes=[("BTXTPad Documents", "*.btxt*"), ('Plain Text Files', "*.txt*"), ("HyperText Markup Language", "*.html*"), ("Comma Separated Values", "*.csv*"), ("SubRip File Format", "*.srt*"), ("All Files", "*.*")])
+        filepath = filedialog.askopenfilename(filetypes=[("BTXTPad Documents", "*.btxt*"), ('Plain Text Files', "*.txt*"), ("HyperText Markup Language", "*.html*"), ("All Files", "*.*")])
         if filepath == "":
             filepath = path
         else:
-            if filepath.split(".")[len(filepath.split(".")) - 1] == "csv":
-                choice = messagebox.askokcancel("BTXTPad","Do you want to view this file as a table?")
-                if choice == True:
-                    main.open_csv_table(filepath)
-                else:
-                    editor.delete(1.0, END)
-                    saved_text = open(filepath, "r", encoding="utf8").read()
-                    editor.insert(INSERT, '\n'.join(saved_text.splitlines()[:-1]))
-            elif filepath.split(".")[len(filepath.split(".")) - 1] == "srt":
-                choice = messagebox.askokcancel("BTXTPad","Do you want to view this file as a table?")
-                if choice == True:
-                    main.open_srt_file(filepath)
-                else:
-                    editor.delete(1.0, END)
-                    saved_text = open(filepath, "r", encoding="utf8").read()
-                    editor.insert(INSERT, '\n'.join(saved_text.splitlines()[:-1]))
-            else:
-                editor.delete(1.0, END)
-                saved_text = open(filepath, "r", encoding="utf8").read()
-                editor.insert(INSERT, '\n'.join(saved_text.splitlines()[:-1]))
-
-    def open_csv_table(filepath):
-        editor.grid_forget()
-        table = Treeview(content, show="headings")
-        table.grid(row=0, column=0, sticky="nsew")
-        scrollbar = Scrollbar(content, orient=VERTICAL, command=table.yview)
-        scrollbar.grid(row=0, column=1, sticky="ns")
-        table.configure(yscrollcommand=scrollbar.set)
-        file = open(filepath, "r", encoding="utf8").read()
-        file = file.rstrip()
-        file = file.split("\n")
-        data = []
-        max_len = 1
-        for i in file:
-            line_len = i.count(";")
-            if line_len > max_len:
-                max_len = line_len
-        for i in file:
-            line_len = i.count(";")
-            if line_len < max_len:
-                data.append(i + (max_len - line_len)*";")
-            else:
-                data.append(i)
-        max_len += 1
-        columns = [""]
-        for i in range(max_len):
-            column, num = "", i
-            while num >= 0:
-                column = string.ascii_uppercase[num % 26] + column
-                num = num // 26 - 1
-            columns.append(column)
-        table.configure(columns=columns)
-        for i in columns:
-            table.heading(i, text=i)
-        for r in range(0, len(data)):
-            row = [r + 1] + data[r].split(";")
-            table.insert("", END, values=row)
-
-    def open_srt_file(filepath):
-        editor.grid_forget()
-        table = Treeview(content, columns=["No.", "Begin", "End", "Subtitles"], show="headings")
-        table.grid(row=0, column=0, sticky="nsew")
-        for i in table["columns"]:
-            table.heading(i, text=i)
-        scrollbar = Scrollbar(content, orient=VERTICAL, command=table.yview)
-        scrollbar.grid(row=0, column=1, sticky="ns")
-        table.configure(yscrollcommand=scrollbar.set)
-        file = open(filepath, "r", encoding="utf8").read()
-        file = file.split("\n")
-        data = []
-        for i in file:
-            if i != "":
-                data.append(i)
-        subtitles = []
-        i = 0
-        while i < len(data):
-            number = int(data[i])
-            begin_time = data[i+1].replace(" ", "").split("-->")[0]
-            end_time = data[i+1].replace(" ", "").split("-->")[1]
-            subtitle = []
-            i += 2
-            while i < len(data) and not data[i].isdigit():
-                subtitle.append(data[i])
-                i += 1
-            subtitle = " ".join(subtitle)
-            subtitle = re.sub(r'<[^>]*>', '', subtitle)
-            subtitle = re.sub(r'\s+', ' ', subtitle).strip()
-            subtitles.append([number, begin_time, end_time, subtitle])
-        for i in subtitles:
-            table.insert("", END, values=i)
+            editor.delete(1.0, END)
+            saved_text = open(filepath, "r", encoding="utf8").read()
+            editor.insert(INSERT, '\n'.join(saved_text.splitlines()[:-1]))
 
     def save():
         global filepath, saved_text
@@ -180,9 +107,18 @@ class main():
         self.clipboard_clear()
         self.clipboard_append(self.get(SEL_FIRST, SEL_LAST))
 
+    def delete(self):
+        try:
+            self.delete(SEL_FIRST, SEL_LAST)
+        except:
+            self.get(1.0, END)
+
     def keep():
-        editor.delete(1.0, SEL_FIRST)
-        editor.delete(SEL_LAST, END)
+        try:
+            editor.delete(1.0, SEL_FIRST)
+            editor.delete(SEL_LAST, END)
+        except:
+            editor.get(1.0, END)
 
     def replace_a():
         if frameReplace.winfo_viewable() == 0:
@@ -319,50 +255,83 @@ class main():
                 editor.mark_set(INSERT, position)
 
     def solve():
-        text = editor.get("sel.first", "sel.last")
-        editor.delete("sel.first", "sel.last")
-        editor.insert(INSERT, eval(text))
+        try:
+            text = editor.get("sel.first", "sel.last")
+            if re.match(r'^[\d\s.+\-*/%]+$', text):
+                editor.delete("sel.first", "sel.last")
+                editor.insert(INSERT, eval(text))
+        except:
+            text = editor.get(1.0, END)
 
-    def open_in_browser():
-        text = editor.get("sel.first", "sel.last")
-        if "http" in text or "www" in text or "//" in text:
-            webbrowser.open_new_tab(text)
+    def move_to_front(self):
+        try:
+            text = self.get(SEL_FIRST, SEL_LAST)
+            self.delete(SEL_FIRST, SEL_LAST)
+            self.insert(1.0, text)
+        except:
+            self.get(1.0, END)
 
+    def pin(window, menubar):
+        if menubar.entrycget(2, "label") == "Pin":
+            menubar.entryconfig(2, label="Unpin")
+        else:
+            menubar.entryconfig(2, label="Pin")
+        window.attributes("-topmost", not window.attributes("-topmost"))
+
+    def toggle_menubar(window, menubar):
+        if window.cget("menu") == str(menubar):
+            window.configure(menu="")
+        else:
+            window.configure(menu=menubar)
+
+    def b3_menu_note(event, menu):
+        menu.tk_popup(event.x_root, event.y_root)
+            
+    def set_note_theme(note, bg, bg2):
+        note.configure(background=bg, foreground="#000", insertbackground="#000")
+        note.tag_configure(SEL, background=bg2)
+        
     def note():
         window = Tk()
+        window.title("Note - BTXTPad")
         window.geometry("254x254")
         window.minsize(254, 254)
-        try:
-            window.iconbitmap("btxtpad.ico")
-        finally:
-            window.title("Note - BTXTPad")
         window.rowconfigure(0, weight=1)
         window.columnconfigure(0, weight=1)
-        menubar = Menu(window)
-        window.config(menu=menubar)
-        menuColor = Menu(window, tearoff=0)
-        menubar.add_cascade(label="•", menu=menuColor)
-        menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#fc5"), background="#fc5", foreground="#000", activebackground="#000", activeforeground="#fff")
-        menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#5cf"), background="#5cf", foreground="#000", activebackground="#000", activeforeground="#fff")
-        menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#d8d"), background="#d8d", foreground="#000", activebackground="#000", activeforeground="#fff")
-        menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#8d8"), background="#8d8", foreground="#000", activebackground="#000", activeforeground="#fff")
-        menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#f84"), background="#f84", foreground="#000", activebackground="#000", activeforeground="#fff")
-        menuColor.add_command(label="Aa", command=lambda: note.configure(bg="#bbb"), background="#bbb", foreground="#000", activebackground="#000", activeforeground="#fff")
+        window.protocol("WM_DELETE_WINDOW", lambda: window.withdraw())
+        window.iconbitmap("")
+        menubar = Menu(window, tearoff=False)
+        menuColor = Menu(window, tearoff=False, activeborderwidth=2.5, activebackground="#444", activeforeground="#fff")
+        menuColor.add_command(command=lambda: main.set_note_theme(note, list(colors.keys())[0], list(colors.values())[0]), background="#fc5", foreground="#000", label="Yellow")
+        menuColor.add_command(command=lambda: main.set_note_theme(note, list(colors.keys())[1], list(colors.values())[1]), background="#5cf", foreground="#000", label="Blue")
+        menuColor.add_command(command=lambda: main.set_note_theme(note, list(colors.keys())[2], list(colors.values())[2]), background="#d8d", foreground="#000", label="Pink")
+        menuColor.add_command(command=lambda: main.set_note_theme(note, list(colors.keys())[3], list(colors.values())[3]), background="#8d8", foreground="#000", label="Green")
+        menuColor.add_command(command=lambda: main.set_note_theme(note, list(colors.keys())[4], list(colors.values())[4]), background="#f84", foreground="#000", label="Orange")
+        menuColor.add_command(command=lambda: main.set_note_theme(note, list(colors.keys())[5], list(colors.values())[5]), background="#bbb", foreground="#000", label="Grey")
+        menubar.add_cascade(label="Color", menu=menuColor)
+        menubar.add_command(label="Save", command=lambda: open(filedialog.asksaveasfilename(defaultextension='.btxt', filetypes=[('All Files', '*.*')]), 'w').write(note.get(1.0, END)))
+        menuB3_note = Menu(window, tearoff=False, activeborderwidth=2.5, activebackground="#e0e0e0", activeforeground="#000000")
+        menuB3_note.add_command(label="Undo", command=lambda: note.edit_undo())
+        menuB3_note.add_command(label="Redo", command=lambda: note.edit_redo())
+        menuB3_note.add_separator()
+        menuB3_note.add_command(label="Cut", command=lambda: main.cut(note))
+        menuB3_note.add_command(label="Copy", command=lambda: main.copy(note))
+        menuB3_note.add_command(label="Paste", command=lambda: note.insert(INSERT, note.selection_get(selection="CLIPBOARD")))
+        menuB3_note.add_command(label="Delete", command=lambda: main.delete(note))
+        menuB3_note.add_separator()
+        menuB3_note.add_command(label="Select All", command=lambda: note.tag_add(SEL, 1.0, END))
+        menuB3_note.add_command(label="Move to front", command=lambda: main.move_to_front(note))
         note = Text(window, bd=8, relief=FLAT, undo=True, wrap=WORD, background=random.choice(["#fc5", "#5cf", "#d8d", "#8d8", "#f84", "#bbb"]), foreground="#000", font=("", 11))
         note.grid(row=0, column=0, sticky="nsew")
-        menubar.add_command(label="<", command=lambda: note.edit_undo())
-        menubar.add_command(label=">", command=lambda: note.edit_redo())
-        menubar.add_command(label="Copy", command=lambda: main.copy(note))
-        menubar.add_command(label="Del", command=lambda: note.delete(1.0, END))
-        menubar.add_command(label="Save As", command=lambda: open(filedialog.asksaveasfilename(defaultextension='.btxt', filetypes=[('All Files', '*.*')]), 'w').write(str(datetime.datetime.now().date())+"\n\n"+note.get(1.0, "end")))
-        menubar.add_command(label="Pin", command=lambda: window.attributes("-topmost", not window.attributes("-topmost")))
-        menubar.add_command(label="+", command=main.note)
+        note.tag_configure(SEL, background=colors[note["bg"]], foreground="#000")
+        window.bind("<Double-Button-1>", lambda i: main.toggle_menubar(window, menubar))
+        window.bind("<Button-3>", lambda event: main.b3_menu_note(event, menuB3_note))
         window.mainloop()
 
     def help():
         window = Tk()
         try:
-            window.iconbitmap("btxtpad.ico")
+            window.iconbitmap("")
         finally:
             window.title("Help - BTXTPad")
         window.geometry("600x450")
@@ -415,8 +384,29 @@ class main():
         notebook.focus_set()
 
     def calculate(option):
+        text = bar.get()
         bar.delete(0, END)
-        bar.insert(INSERT, option)
+        try:
+            if re.match(r'^[\d\s.+\-*/%]+$', text):
+                if option == "b":
+                    answer = str(bin(int(eval(text))))
+                elif option == "o":
+                    answer = str(oct(int(eval(text))))
+                elif option == "h":
+                    answer = str(hex(int(eval(text))))
+                elif option == "s":
+                    answer = str(eval(text) ** 2)
+                elif option == "r":
+                    answer = str(math.sqrt(eval(text)))
+                elif option == "i":
+                    answer = str(1/float(eval(text)))                
+                else:
+                    answer = eval(text)
+                bar.insert(INSERT, answer)
+            else:
+                bar.insert(INSERT, "Error!")
+        except:
+           bar.insert(INSERT, "Error!")
 
     def calculator():
         buttonWidgets.configure(text="Calculator")
@@ -432,18 +422,21 @@ class main():
         frameReplace.grid(row=0, column=0, sticky="nsew")
         find.focus_set()
         
-    def theme(bg0, bg1, bg2, fg, abg, afg):
+    def theme(bg0, bg1, bg2, fg, abg):
         editor.configure(bg=bg0, fg=fg, insertbackground=fg)
         editor.tag_configure(SEL, background=bg2, foreground=fg)
         for i in ["TButton", "TCheckbutton", "TCombobox", "TEntry", "TFrame", "TLabel", "TNotebook", "TRadiobutton", "TScrollbar", "TSpinbox"]:
             a.configure(i, background=bg1)
+        a.configure("TMenubutton", background=bg1, foreground=fg)
         for i in [menuFile, menuEdit, menuDelete, menuFormat, menuInsert, menuView, menuSidebar, menuWidgets, menuB3]:
-            i.configure(background=bg1, foreground=afg, activebackground=abg, activeforeground=afg)
+            i.configure(background=bg1, foreground=fg, activebackground=abg, activeforeground=fg)
         for i in ["TCheckbutton", "TLabel", "TRadiobutton"]:
-            a.configure(i, foreground=afg)  
+            a.configure(i, foreground=fg)
+        for i in [(menuFile, 8), (menuSidebar, 0), (menuSidebar, 1), (menuSidebar, 2), (menuView, 6), (menuWidgets, 0), (menuWidgets, 1), (menuWidgets, 2), (menuWidgets, 3)]:
+            i[0].entryconfig(i[1], selectcolor=fg)
         a.configure("Treeview", background=bg0, foreground=fg)
         a.configure("Custom.TFrame", background=abg)
-        a.configure("Custom.TLabel", background=abg, foreground=afg)
+        a.configure("Custom.TLabel", background=abg, foreground=fg)
 
     def settings():
         buttonWidgets.configure(text="Settings")
@@ -478,13 +471,13 @@ class main():
         editor.configure(font=(font_family.get(), size.get(), style), border=int(bar_border.get()))
         root.attributes("-topmost", always_on_top.get())
         if theme.get() == 1:
-            main.theme("#fff", "#f0f0f0", "#e0e0e0", "#000", "#e0e0e0", "#000")
+            main.theme("#fff", "#f0f0f0", "#e0e0e0", "#000", "#e0e0e0")
         elif theme.get() == 2:
-            main.theme("#dcb", "#f0f0f0", "#bead9c", "#000", "#e0e0e0", "#000")
+            main.theme("#dcb", "#f0f0f0", "#bead9c", "#000", "#e0e0e0")
         elif theme.get() == 3:
-            main.theme("#222", "#000", "#505050", "#fff", "#444", "#fff")
+            main.theme("#222", "#000", "#505050", "#fff", "#444")
         elif theme.get() == 4:
-            main.theme("#000", "#000", "#2e2e2e", "#fff", "#444", "#fff")  
+            main.theme("#000", "#000", "#2e2e2e", "#fff", "#444")  
         if bar_wrap.get() == "Disabled":
             editor.configure(wrap=NONE)
         elif bar_wrap.get() == "Character":
@@ -583,26 +576,26 @@ if __name__ == "__main__":
     root.title("BTXTPad")
     root.geometry("800x600")
     a = Style(root)
+    colors = {"#fc5": "#d19e27", "#5cf": "#279ed1", "#d8d": "#af5aaf", "#8d8": "#5aaf5a", "#f84": "#d15a16", "#bbb": "#8d8d8d"}
     try:
-        root.iconbitmap("btxtpad.ico")
+        root.iconbitmap("")
     except:
         root.iconbitmap("")
     root.rowconfigure(1, weight=1)
     root.columnconfigure(0, weight=1)
     root.protocol('WM_DELETE_WINDOW', lambda: main.exit())
-
     menu_bar_editor = Frame(root, border=4)
     menu_bar_editor.grid(row=0, column=0, sticky="nsew")
     menu_bar_editor.columnconfigure(4, weight=1)
-    buttonFile = Menubutton(menu_bar_editor, text="File", style="TButton", width=10)
+    buttonFile = Menubutton(menu_bar_editor, text="File")
     buttonFile.grid(row=0, column=0, sticky="nsew")
-    buttonEdit = Menubutton(menu_bar_editor, text="Edit", style="TButton", width=10)
+    buttonEdit = Menubutton(menu_bar_editor, text="Edit")
     buttonEdit.grid(row=0, column=1, sticky="nsew")
-    buttonInsert = Menubutton(menu_bar_editor, text="Insert", style="TButton", width=10)
+    buttonInsert = Menubutton(menu_bar_editor, text="Insert")
     buttonInsert.grid(row=0, column=2, sticky="nsew")
-    buttonView = Menubutton(menu_bar_editor, text="View", style="TButton", width=10)
-    search_bar = Entry(menu_bar_editor)
-    search_bar.grid(row=0, column=4, sticky="ew", ipady=1)
+    buttonView = Menubutton(menu_bar_editor, text="View")
+    search_bar = Entry(menu_bar_editor, width=36)
+    search_bar.grid(row=0, column=4, sticky="nse", ipady=1)
     buttonView.grid(row=0, column=3, sticky="nsew")
     buttonFind = Button(menu_bar_editor, text="Find", command=lambda: main.find_next(search_bar.get()))
     buttonFind.grid(row=0, column=5, sticky="nsew")
@@ -635,7 +628,7 @@ if __name__ == "__main__":
     menuEdit.add_separator()
     menuDelete = Menu(root, tearoff=False, activeborderwidth=2.5)
     menuEdit.add_cascade(label="Delete", menu=menuDelete, accelerator="Del")
-    menuDelete.add_command(label="Delete", command=lambda: editor.delete(SEL_FIRST, SEL_LAST), accelerator="Del")
+    menuDelete.add_command(label="Delete", command=lambda: main.delete(editor), accelerator="Del")
     menuDelete.add_command(label="Delete All", command=lambda: editor.delete(1.0, END), accelerator="Shift+Del")
     menuDelete.add_command(label="Keep", command=main.keep, accelerator="Ctrl+K")
     menuDelete.add_separator()
@@ -701,21 +694,21 @@ if __name__ == "__main__":
     menuWidgets.add_radiobutton(label="Calculator", command=main.calculator, variable=widget, value=2)
     menuWidgets.add_radiobutton(label="Settings", command=main.settings, variable=widget, value=3)
     menuWidgets.add_radiobutton(label="Replace", command=main.replace, variable=widget, value=4)
-    buttonWidgets = Menubutton(menu_bar_sidebar, text="Widgets", style="TButton", width=10, menu=menuWidgets)
-    buttonWidgets.grid(row=0, column=0, sticky="nsew")
+    buttonWidgets = Menubutton(menu_bar_sidebar, text="Widgets", menu=menuWidgets)
+    buttonWidgets.grid(row=0, column=0, sticky="nsw")
 
     sidebar = Frame(root)
     sidebar.rowconfigure(0, weight=1)
     sidebar.columnconfigure(0, weight=1)
 
     notebook = Text(sidebar, bd=16, relief=FLAT, undo=True, wrap=WORD, background="#fc5", foreground="#000", font=("Consolas", 11), width=36)
-    menuOptions = Menu(root, tearoff=False, activeborderwidth=2.5)
-    menuOptions.add_command(label="Aa", command=lambda: notebook.configure(bg="#fc5"), background="#fc5", foreground="#000", activebackground="#000", activeforeground="#fff")
-    menuOptions.add_command(label="Aa", command=lambda: notebook.configure(bg="#5cf"), background="#5cf", foreground="#000", activebackground="#000", activeforeground="#fff")
-    menuOptions.add_command(label="Aa", command=lambda: notebook.configure(bg="#d8d"), background="#d8d", foreground="#000", activebackground="#000", activeforeground="#fff")
-    menuOptions.add_command(label="Aa", command=lambda: notebook.configure(bg="#8d8"), background="#8d8", foreground="#000", activebackground="#000", activeforeground="#fff")
-    menuOptions.add_command(label="Aa", command=lambda: notebook.configure(bg="#f84"), background="#f84", foreground="#000", activebackground="#000", activeforeground="#fff")
-    menuOptions.add_command(label="Aa", command=lambda: notebook.configure(bg="#bbb"), background="#bbb", foreground="#000", activebackground="#000", activeforeground="#fff")
+    menuOptions = Menu(root, tearoff=False, activeborderwidth=2.5, activebackground="#444", activeforeground="#fff")
+    menuOptions.add_command(label="Aa", command=lambda: notebook.configure(bg="#fc5"), background="#fc5", foreground="#000")
+    menuOptions.add_command(label="Aa", command=lambda: notebook.configure(bg="#5cf"), background="#5cf", foreground="#000")
+    menuOptions.add_command(label="Aa", command=lambda: notebook.configure(bg="#d8d"), background="#d8d", foreground="#000")
+    menuOptions.add_command(label="Aa", command=lambda: notebook.configure(bg="#8d8"), background="#8d8", foreground="#000")
+    menuOptions.add_command(label="Aa", command=lambda: notebook.configure(bg="#f84"), background="#f84", foreground="#000")
+    menuOptions.add_command(label="Aa", command=lambda: notebook.configure(bg="#bbb"), background="#bbb", foreground="#000")
 
     calc = Frame(sidebar, width=36)
     calc.rowconfigure(1, weight=1)
@@ -728,13 +721,13 @@ if __name__ == "__main__":
         frameCalculator.rowconfigure(i, weight=1)
     for j in range(0, 4):
         frameCalculator.columnconfigure(j, weight=1)
-    Button(frameCalculator, text="bin", command=lambda: main.calculate(str(bin(int(eval(bar.get())))))).grid(row=0, column=0, sticky="nsew")
-    Button(frameCalculator, text="oct", command=lambda: main.calculate(str(oct(int(eval(bar.get())))))).grid(row=0, column=1, sticky="nsew")
-    Button(frameCalculator, text="hex", command=lambda: main.calculate(str(hex(int(eval(bar.get())))))).grid(row=0, column=2, sticky="nsew")
+    Button(frameCalculator, text="bin", command=lambda: main.calculate("b")).grid(row=0, column=0, sticky="nsew")
+    Button(frameCalculator, text="oct", command=lambda: main.calculate("o")).grid(row=0, column=1, sticky="nsew")
+    Button(frameCalculator, text="hex", command=lambda: main.calculate("h")).grid(row=0, column=2, sticky="nsew")
     Button(frameCalculator, text="^", command=lambda: bar.insert(INSERT, " ** ")).grid(row=0, column=3, sticky="nsew")
-    Button(frameCalculator, text="x²", command=lambda: main.calculate(str(eval(bar.get()) ** 2))).grid(row=1, column=0, sticky="nsew")
-    Button(frameCalculator, text="√", command=lambda: main.calculate(str(math.sqrt(eval(bar.get()))))).grid(row=1, column=1, sticky="nsew")
-    Button(frameCalculator, text="1/x", command=lambda: main.calculate(str(1/float(eval(bar.get()))))).grid(row=1, column=2, sticky="nsew")
+    Button(frameCalculator, text="x²", command=lambda: main.calculate("s")).grid(row=1, column=0, sticky="nsew")
+    Button(frameCalculator, text="√", command=lambda: main.calculate("r")).grid(row=1, column=1, sticky="nsew")
+    Button(frameCalculator, text="1/x", command=lambda: main.calculate("i")).grid(row=1, column=2, sticky="nsew")
     Button(frameCalculator, text="+", command=lambda: bar.insert(INSERT, " + ")).grid(row=1, column=3, sticky="nsew")
     Button(frameCalculator, text="7", command=lambda: bar.insert(INSERT, "7")).grid(row=2, column=0, sticky="nsew")
     Button(frameCalculator, text="8", command=lambda: bar.insert(INSERT, "8")).grid(row=2, column=1, sticky="nsew")
@@ -751,7 +744,7 @@ if __name__ == "__main__":
     Button(frameCalculator, text="C", command=lambda: bar.delete(0, END)).grid(row=5, column=0, sticky="nsew")
     Button(frameCalculator, text="0", command=lambda: bar.insert(INSERT, "0")).grid(row=5, column=1, sticky="nsew")
     Button(frameCalculator, text=".", command=lambda: bar.insert(INSERT, ".")).grid(row=5, column=2, sticky="nsew")
-    Button(frameCalculator, text="=", command=lambda: main.calculate(eval(bar.get()))).grid(row=5, column=3, sticky="nsew")
+    Button(frameCalculator, text="=", command=lambda: main.calculate("e")).grid(row=5, column=3, sticky="nsew")
 
     frameSettings = Frame(sidebar, width=36, border=16)
     frameSettings.rowconfigure(8, weight=1)
@@ -876,12 +869,12 @@ if __name__ == "__main__":
     menuB3.add_command(label="Paste", command=lambda: editor.insert(INSERT, editor.selection_get(selection="CLIPBOARD")))
     menuB3.add_command(label="Select All", command=lambda: editor.tag_add(SEL, 1.0, END))
     menuB3.add_separator()
-    menuB3.add_cascade(label="Delete", menu=menuDelete)
+    menuB3.add_cascade(label="Delete", command=lambda: main.delete(editor))
     menuB3.add_separator()
     menuB3.add_command(label="Solve", command=main.solve)
-    menuB3.add_command(label="Open in browser", command=main.open_in_browser)
+    menuB3.add_command(label="Move to front", command=lambda: move_to_front(editor))
 
-    main.theme("#fff", "#f0f0f0", "#e0e0e0", "#000", "#e0e0e0", "#000")
+    main.theme("#fff", "#f0f0f0", "#e0e0e0", "#000", "#e0e0e0")
     main.notebook()
     main.refresh()
     editor.focus_set()
