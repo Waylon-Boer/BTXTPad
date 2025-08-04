@@ -243,7 +243,7 @@ class main():
     def solve():
         try:
             text = editor.get("sel.first", "sel.last")
-            if re.match(r'^[\d\s.+\-*/%]+$', text):
+            if re.match(r"^[\d\s.+\-*/%]+$", text):
                 editor.delete("sel.first", "sel.last")
                 editor.insert(INSERT, eval(text))
         except:
@@ -373,7 +373,7 @@ class main():
         text = bar.get()
         bar.delete(0, END)
         try:
-            if re.match(r'^[\d\s.+\-*/%]+$', text):
+            if re.match(r"^[\d\s.+\-*/%box]+$", text):
                 if option == "b":
                     answer = str(bin(int(eval(text))))
                 elif option == "o":
@@ -943,4 +943,5 @@ if __name__ == "__main__":
     root.bind("<Motion>", lambda i: main.refresh())
     root.bind("<Key>", lambda i: main.refresh())
     root.mainloop()
+
 
